@@ -2,20 +2,21 @@ import fs from 'fs';
 import type { Path } from 'typescript';
 import path from "path";
 
-var sending_file = false;
-const chunk_generator: AsyncGenerator|null = null;
-
 interface con_info {
     chunk_generator: AsyncGenerator<any, void, unknown>
 }
 
 const wss = Bun.serve<con_info>({
     async fetch(req, server) {
-        // const url = new URL(req.url);
-        // console.log('how to get the pathname: ', url.pathname)
-        console.log('fetch server')
-        const file_name = req.headers.get('filename')
-        const path_name = path.resolve( __dirname, `/${file_name}`);
+        const url = new URL(req.url);
+        const file_name = url.searchParams.get('filename');
+        if (file_name === null) {
+            return new Response("no filename present", { status: 400 });
+        }
+        const decodedFileName = decodeURIComponent(file_name);
+        console.log('dirname: ', __dirname)
+        const path_name = path.resolve(`${__dirname}\\${decodedFileName}`);
+        console.log(path_name);
         const chunk_generator =  streamAnimeWebSocket(path_name);
         if (server.upgrade(req,{
             data:{
@@ -27,30 +28,23 @@ const wss = Bun.serve<con_info>({
         return new Response("Upgrade failed", { status: 500 });
     },
     websocket: {
-        open(ws) {
+        async open(ws) {
             console.log('websocket open');
+            let next_chunk = (await ws.data.chunk_generator.next()).value
+            ws.send(next_chunk)
         },
         async message(ws, message) {
+            await new Promise(r => setTimeout(r, 10));
             console.log('received: ', message);
-            if (message.includes('receive bungo')){
-                sending_file = true;
-                const path_name = path.resolve( __dirname, '/Bungo Stray Dogs S1 - 01.mkv');
-                const chunk_generator = await streamAnimeWebSocket(path_name);
-                ws.subscribe('anime');
-            }
-            else if (!sending_file){
-                ws.send(message);
-                return;
-            }
-            else if (message.includes('next chunk') && sending_file){
+            if (message.includes('next chunk')){
                 let next_chunk = (await ws.data.chunk_generator.next()).value
                 if (next_chunk==="EOF"){
-                    wss.publish('anime', next_chunk);
+                    ws.send(next_chunk);
                     ws.close();
                     return
                 }
                 console.log('send next chunk');
-                wss.publish('anime', next_chunk);
+                ws.send(next_chunk);
             }
 
         }, // a message is received

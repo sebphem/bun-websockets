@@ -1,27 +1,8 @@
 import io from 'socket.io-client';
-import readlineSync from 'readline-sync';
+import fs from 'fs';
+const writeStream = fs.createWriteStream('./literary_stray_dog.mkv');
 
-const userInput = readlineSync.question('Enter something: ');
-
-console.log(`You entered: ${userInput}`);
-
-// // CLI to send messages to all connected clients
-// const rl = readline.createInterface({
-//     input: process.stdin,
-//     output: process.stdout,
-//     prompt: 'Message> '
-//   });
-
-
-// rl.prompt();
-
-
-// rl.on('line', (line) => {
-
-// })
-
-
-const socket = io('http://your-websocket-server.com', {
+const socket = io('localhost:8400', {
     extraHeaders:{
         'filename':'Bungo Stray Dogs S1 - 01.mkv'
         // 'series':'',
@@ -34,7 +15,16 @@ socket.on('connect', () => {
 });
 
 socket.on('message', (data) => {
-  console.log('Message from server:', data);
+    console.log('Message from server:', data);
+    data
+    if (data === 'EOF') {
+      console.log('end of file')
+      socket.close();
+      writeStream.close();
+  } else {
+      writeStream.write(data);
+      socket.send('next chunk');
+  }
 });
 
 socket.on('disconnect', () => {
