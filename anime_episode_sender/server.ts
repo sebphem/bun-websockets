@@ -1,32 +1,57 @@
 import fs from 'fs';
+import type { Path } from 'typescript';
+import path from "path";
 
+var sending_file = false;
+const chunk_generator: AsyncGenerator|null = null;
 
-const wss = Bun.serve({
-    fetch(req, server) {
+interface con_info {
+    chunk_generator: AsyncGenerator<any, void, unknown>
+}
+
+const wss = Bun.serve<con_info>({
+    async fetch(req, server) {
         // const url = new URL(req.url);
         // console.log('how to get the pathname: ', url.pathname)
         console.log('fetch server')
-
-        // upgrade the request to a WebSocket
-        if (server.upgrade(req)) {
-            return; // do not return a Response
+        const file_name = req.headers.get('filename')
+        const path_name = path.resolve( __dirname, `/${file_name}`);
+        const chunk_generator =  streamAnimeWebSocket(path_name);
+        if (server.upgrade(req,{
+            data:{
+                chunk_generator : chunk_generator
+            }
+        })) {
+            return;
         }
         return new Response("Upgrade failed", { status: 500 });
     },
     websocket: {
         open(ws) {
             console.log('websocket open');
-            // ws.send('welcome to the server!');
-        }, // a socket is opened
+        },
         async message(ws, message) {
-            console.log('received: ', message)
+            console.log('received: ', message);
             if (message.includes('receive bungo')){
+                sending_file = true;
+                const path_name = path.resolve( __dirname, '/Bungo Stray Dogs S1 - 01.mkv');
+                const chunk_generator = await streamAnimeWebSocket(path_name);
                 ws.subscribe('anime');
-                await streamAnimeWebSocket();
-                console.log('sent file')
-                ws.close();
             }
-            ws.send(message)
+            else if (!sending_file){
+                ws.send(message);
+                return;
+            }
+            else if (message.includes('next chunk') && sending_file){
+                let next_chunk = (await ws.data.chunk_generator.next()).value
+                if (next_chunk==="EOF"){
+                    wss.publish('anime', next_chunk);
+                    ws.close();
+                    return
+                }
+                console.log('send next chunk');
+                wss.publish('anime', next_chunk);
+            }
 
         }, // a message is received
         close(ws, code, message) {
@@ -40,15 +65,12 @@ const wss = Bun.serve({
 
   });
 
-
-async function streamAnimeWebSocket(){
-
-    const anime_read_stream = fs.createReadStream('./Bungo Stray Dogs S1 - 01.mkv')
+async function* streamAnimeWebSocket(filename:string){
+    const anime_read_stream = fs.createReadStream(filename as Path)
     for await (const chunk of anime_read_stream.iterator()) {
-        wss.publish('anime', chunk)
-        await new Promise(r => setTimeout(r, 10));
+        yield chunk;
     }
-    wss.publish('anime', 'EOF');
+    yield 'EOF';
 }
 
 console.log('WebSocket server started on: ', wss.url);

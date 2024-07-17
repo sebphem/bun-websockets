@@ -1,6 +1,6 @@
 import readline from 'readline';
 import fs from 'fs';
-const socket = new WebSocket("ws://localhost:8400");
+const socket = new WebSocket("ws://localhost:8400",);
 const writeStream = fs.createWriteStream('./literary_stray_dog.mkv');
 
 socket.addEventListener('open', event =>
