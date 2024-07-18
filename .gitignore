@@ -175,3 +175,5 @@ dist
 .DS_Store
 
 /anime_episode_sender/*.mkv
+
+typescript_tests
