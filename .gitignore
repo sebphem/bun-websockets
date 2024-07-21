@@ -177,3 +177,4 @@ dist
 /anime_episode_sender/*.mkv
 
 typescript_tests
+keys/*.pem
