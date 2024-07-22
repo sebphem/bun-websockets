@@ -1,14 +1,18 @@
 {
   "dependencies": {
+    "inquirer": "^10.1.0",
+    "loading-cli": "^1.1.2",
     "readline-sync": "^1.4.10",
     "socket.io-client": "^4.7.5",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "uuid": "^10.0.0"
   },
   "name": "websocket_server",
   "module": "index.ts",
   "type": "module",
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/uuid": "^10.0.0"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
