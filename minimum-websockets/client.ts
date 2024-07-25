@@ -8,7 +8,7 @@ import { chooseHost,  chooseFolder} from '../user_input/prompt';
 
 // const base_folder = await querySync('What is the base folder?');
 
-const base_folder = "C:\\Users\\sebas\\Documents\\GitHub\\bun-websockets\\output"
+const base_folder = "C:\\Users\\sebas\\Documents\\websocket_server"
 
 const all_local_ips = getIpsandHostName(8400);
 
@@ -35,13 +35,11 @@ async function downloadEntireFolder(dir_name: string) {
         fs.mkdirSync(path.join(base_folder, chosen_folder))
     } catch {}
     
-    for (let i = 0; i < num_episodes-2; i++){
+    for (let i = 0; i < 1; i++){
         console.log("starting episode: ", i + 1);
         const socket = new WebSocket(`ws://localhost:8400/animews?dir_name=${encodeURIComponent(dir_name)}&ep_num=${i}`);
         console.log('path: ', path.resolve( base_folder,`${dir_name}`,`${i + 1}.mkv`))
         const writeStream = fs.createWriteStream(path.resolve(base_folder, `${dir_name}`, `${i + 1}.mkv`));
-
-        
         socket.addEventListener('open', event =>
             {
                 console.log('connected!');

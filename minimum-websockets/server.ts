@@ -35,7 +35,7 @@ const wss = Bun.serve<con_info>({
                 const anime_dir_name = path.resolve(`${base_folder}\\${decodeddirname}`);
                 console.log('anime dir name: ', anime_dir_name)
                 const file_path = getNthFileNameInDir(anime_dir_name, ep_num)
-                
+                console.log('assumed file path: ', file_path)
                 const chunk_generator =  streamAnimeWebSocket(file_path);
 
                 //try upgrading the server
@@ -107,15 +107,18 @@ function getNthFileNameInDir(dir_path: Path | string, n: number): string {
 
     const files = fs.readdirSync(dir_path);
     console.log('num of files at ', dir_path, ' : ',files.length)
-    files.forEach(file => {
+    for (const file of files){
         const filePath = `${dir_path}\\${file}`;
+        console.log('file path: ', filePath, ' is a file')
         if (fs.statSync(filePath).isFile()) {
             if (n === fileNumber) {
+                console.log('found the nth value, returning ', file)
                 return filePath;
             }
             fileNumber++;
+            console.log('filenumber value: ', fileNumber)
         }
-    });
+    }
     return 'out of range';
 }
 
