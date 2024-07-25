@@ -178,3 +178,5 @@ dist
 
 typescript_tests
 keys/*.pem
+tests
+output
